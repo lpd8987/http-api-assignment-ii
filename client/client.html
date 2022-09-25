@@ -5,7 +5,111 @@
   <link rel="stylesheet" type="text/css" href="/style.css">
   
   <script>
+      const handleResponse = async (response, method) => {
+        const content = document.querySelector("#content");
 
+        //Write a message depending on the status
+        switch(response.status) {
+          case 200:
+            content.innerHTML = "<b>Success</b>";
+            break;
+          case 201:
+            content.innerHTML = "<b>User Created</b>";
+            break;
+          case 204: 
+            content.innerHTML = "<b>Updated (No Content)</b>";
+            return; //Entry updated, no need to go any further
+          case 400: 
+            content.innerHTML = "<b>Bad Request</b>";
+            break;
+          case 404:
+            content.innerHTML = "<b>Not Found</b>";
+            break;
+          default:
+            content.innerHTML = "Error code not implemented by client.";
+            break;
+        }
+
+        //Display message/results if applicable
+        let jsonResponse;
+
+        if(method == "head"){
+          //head request, no body to parse
+          return;
+        }
+        else {
+          jsonResponse = await response.json();
+          console.log(jsonResponse); //Log the response object
+          if(jsonResponse.message){
+            content.innerHTML += `<p>${jsonResponse.message}</p>`;
+          } else {
+            //if there is no message parameter, then the user was asking for the users
+            content.innerHTML += `<p>${JSON.stringify(jsonResponse.users)}</p>`;
+          }
+        }
+      }
+
+      //Grab the data from the name (post) form and send the data to the server
+      const postRequest = async (form) => {
+        const action = form.getAttribute("action");
+        const method = form.getAttribute("method");
+
+        const nameInput = form.querySelector("#nameField");
+        const ageInput = form.querySelector("#ageField");
+
+        const params = `name=${nameInput.value}&age=${ageInput.value}`;
+
+        let response = await fetch(action, {
+          method: method,
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json"
+          },
+          body: params
+        });
+
+        handleResponse(response, method);
+      }
+
+      //Grab the data from the user (get/head) form and fetch the data from the server
+      const fetchRequest = async(form) => {
+        //Grab the url and method from the html form below
+        const url = userForm.querySelector('#urlField').value;
+        const method = userForm.querySelector('#methodSelect').value;
+      
+        //Await our fetch response. Go to the URL, use the right method, and attach the headers.
+        let response = await fetch(url, {
+          method: method,
+          headers: {
+              'Accept': 'application/json'
+          },
+        });
+
+        handleResponse(response, method);
+      };
+
+      //setup function
+      const init = () => {
+        const nameForm = document.querySelector("#nameForm");
+        const userForm = document.querySelector("#userForm");
+
+        const postUser = (e) => {
+          e.preventDefault();
+          postRequest(nameForm);
+          return;
+        }
+
+        const fetchUser = (e) => {
+          e.preventDefault();
+          fetchRequest(userForm);
+          return;
+        }
+
+        nameForm.addEventListener("submit", postUser);
+        userForm.addEventListener("submit", fetchUser);
+      };
+
+      window.onload = init;
   </script>
 </head>
 <body>
